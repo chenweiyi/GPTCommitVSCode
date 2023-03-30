@@ -2,7 +2,7 @@
   "name": "gpt-commit",
   "displayName": "GPT Commit",
   "description": "VS Code extension which helps to generate AI commit messages using ChatGPT",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "homepage": "https://github.com/dmytrobaida/GPTCommitVSCode#readme",
   "bugs": "https://github.com/dmytrobaida/GPTCommitVSCode/issues",
   "repository": {
@@ -18,7 +18,14 @@
     "Other",
     "SCM Providers"
   ],
-  "keywords": ["Commit", "AI", "ChatGPT", "GPT", "git", "repository"],
+  "keywords": [
+    "Commit",
+    "AI",
+    "ChatGPT",
+    "GPT",
+    "git",
+    "repository"
+  ],
   "icon": "assets/images/icon256.png",
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -27,10 +34,21 @@
       {
         "command": "gptcommit.generateAICommit",
         "title": "Generate AI commit",
+        "category": "GPT Commit",
         "icon": {
           "dark": "assets/icons/commit-dark.svg",
           "light": "assets/icons/commit-light.svg"
         }
+      },
+      {
+        "command": "gptcommit.registerOpenAiKey",
+        "category": "GPT Commit",
+        "title": "register OpenAI key"
+      },
+      {
+        "command": "gptcommit.registerThirdPartyServiceUrl",
+        "category": "GPT Commit",
+        "title": "register third party service URL, high priority over OpenAI service"
       }
     ],
     "menus": {
@@ -49,6 +67,16 @@
           "type": "string",
           "default": "",
           "description": "Needed for generating AI commit messages"
+        },
+        "gptcommit.appearance.delimeter": {
+          "type": "string",
+          "default": "*",
+          "description": "Delimeter between commit lines"
+        },
+        "gptcommit.thirdParty.serviceUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom host URL similar to https://api.openai.com/v1/chat/completions. High priority over openAI."
         }
       }
     }
@@ -60,7 +88,8 @@
     "watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts",
     "package": "vsce package -o packages",
-    "package:publish": "vsce publish"
+    "package:publish": "vsce publish",
+    "pkg": "vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -75,6 +104,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
+    "axios": "^1.4.0",
     "execa": "^7.1.1",
     "openai": "^3.2.1"
   }

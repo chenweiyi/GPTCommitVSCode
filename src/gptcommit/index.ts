@@ -10,8 +10,26 @@ import { assertGitRepo, getStagedDiff } from "./utils/git";
 import { generateCommitMessage } from './utils/openai';
 import { runTaskWithTimeout } from './utils/timer';
 
-async function generateAICommitMessage(apiKey: string) {
+async function generateAICommitMessage({
+    channel, 
+    apiKey, 
+    delimeter, 
+    serviceUrl
+} : {
+    channel: vscode.OutputChannel, 
+    apiKey?: string, 
+    delimeter?: string, 
+    serviceUrl?: string
+}) {
     try {
+
+        if (!apiKey && !serviceUrl) {
+            vscode.window.showErrorMessage('Either apiKey or serviceUrl must be provided!');
+            return;
+        }
+
+
+        channel.appendLine(`[generateAICommitMessage] params: ${apiKey} ${serviceUrl} ${delimeter}`);
         const assertResult = await assertGitRepo();
 
         if (!assertResult) {
@@ -37,10 +55,14 @@ async function generateAICommitMessage(apiKey: string) {
                 progress.report({ increment: increment += 1 });
             }, 5000, 200);
 
-            const commitMessage = await generateCommitMessage(
+            const commitMessage = await generateCommitMessage({
+                channel,
                 apiKey,
-                staged.diff,
-            );
+                diff: staged.diff,
+                delimeter,
+                serviceUrl
+            });
+            channel.appendLine(`[generateAICommitMessage] progress commitMessage: ${commitMessage}`);
 
             return commitMessage;
         });
@@ -58,6 +80,7 @@ async function generateAICommitMessage(apiKey: string) {
             return;
         }
 
+        channel.appendLine(`[generateAICommitMessage] commitMessage: ${commitMessage}`);
         return commitMessage;
     } catch (error: any) {
         const errorMessage = error?.response?.data?.error?.message;
