@@ -51,7 +51,7 @@ async function generateAICommitMessage({
         }, async (progress) => {
             let increment = 0;
 
-            runTaskWithTimeout(() => {
+            const over = runTaskWithTimeout(() => {
                 progress.report({ increment: increment += 1 });
             }, 5000, 200);
 
@@ -63,6 +63,9 @@ async function generateAICommitMessage({
                 serviceUrl
             });
             channel.appendLine(`[generateAICommitMessage] progress commitMessage: ${commitMessage}`);
+
+            increment < 100 && progress.report({ increment: 100 });
+            over();
 
             return commitMessage;
         });

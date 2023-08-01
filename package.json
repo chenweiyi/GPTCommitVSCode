@@ -77,6 +77,11 @@
           "type": "string",
           "default": "",
           "description": "Custom host URL similar to https://api.openai.com/v1/chat/completions. High priority over openAI."
+        },
+        "gptcommit.output.generateMsgToFile": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to generate temporary files to store messages"
         }
       }
     }

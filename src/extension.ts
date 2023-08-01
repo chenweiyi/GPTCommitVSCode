@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import { tmpdir } from 'os';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
 
 import generateAICommitMessage from './gptcommit';
 
@@ -16,6 +19,12 @@ async function getGitApi() {
 	const gitApi = gitEntension.exports?.getAPI(1);
 
 	return gitApi;
+}
+
+function getGenerateMsgToFile() {
+	const configuration = vscode.workspace.getConfiguration('gptcommit');
+	const generateMsgToFile = configuration.get<boolean>('output.generateMsgToFile');
+	return generateMsgToFile;
 }
 
 function getOpenAiApiKey() {
@@ -52,15 +61,55 @@ function getThirdPartyServiceUrl() {
 	return hostUrl;
 }
 
-async function setRepositoryCommitMessage(commitMessage: string) {
+async function getRespository() {
 	const gitApi = await getGitApi();
 	const respository = gitApi?.repositories[0];
+	return respository;
+}
+
+async function setRepositoryCommitMessage(commitMessage: string) {
+	const respository = await getRespository();
 
 	if (!respository) {
 		return;
 	}
 
 	respository.inputBox.value = commitMessage;
+}
+
+async function openFileCommitMessage({
+	context, channel, commitMessage
+}: {
+	context: vscode.ExtensionContext, channel: vscode.OutputChannel, commitMessage: string
+}) {
+	const uid = randomUUID();
+	const tmpMsgFile = path.join(tmpdir(), `vscode-gptcommit-${uid}.txt`);
+	channel.appendLine(`[openFileCommitMessage] tmpMsgFile path: ${tmpMsgFile}`);
+	await vscode.workspace.fs.writeFile(vscode.Uri.file(tmpMsgFile), Buffer.from(commitMessage, 'utf8'));
+	const editor = vscode.window.activeTextEditor;
+	const doc = await vscode.workspace.openTextDocument(tmpMsgFile);
+	await vscode.window.showTextDocument(doc, {
+		preview: false,
+		viewColumn: editor ? editor.viewColumn : undefined
+	});
+	
+	let saveFile = vscode.workspace.onDidSaveTextDocument(async (doc) => {
+		if (doc.fileName === tmpMsgFile) {
+			const respository = await getRespository();
+			if (!respository) {
+				return;
+			}
+			respository.inputBox.value = doc.getText();
+		}
+	});
+
+	// let deleteFile = vscode.workspace.onDidCloseTextDocument(async (doc) => {
+	// 	if (doc.fileName === tmpMsgFile) {
+	// 		await vscode.workspace.fs.delete(vscode.Uri.file(tmpMsgFile));
+	// 	}
+	// });
+	context.subscriptions.push(saveFile);
+	// context.subscriptions.push(deleteFile);
 }
 
 async function selectOpenAiApiKey() {
@@ -95,6 +144,7 @@ function generateAICommitCommand(context: vscode.ExtensionContext, channel: vsco
 	let disposable = vscode.commands.registerCommand('gptcommit.generateAICommit', async () => {
 		let apiKey = getOpenAiApiKey();
 		let serviceUrl = getThirdPartyServiceUrl();
+		const isGetGenerateMsgToFile = getGenerateMsgToFile();
 	
 		if (!apiKey && !serviceUrl) {
 
@@ -127,8 +177,16 @@ function generateAICommitCommand(context: vscode.ExtensionContext, channel: vsco
 		if (!commitMessage) {
 			return;
 		}
-	
-		await setRepositoryCommitMessage(commitMessage);
+
+		if (isGetGenerateMsgToFile) {
+			await openFileCommitMessage({
+				context,
+				channel,
+				commitMessage,
+			});
+		} else {
+			await setRepositoryCommitMessage(commitMessage);
+		}
 	});
 	context.subscriptions.push(disposable);
 }
@@ -155,6 +213,7 @@ export function activate(context: vscode.ExtensionContext) {
 	generateAICommitCommand(context, channel);
 	registerOpenAiKeyCommand(context);
 	registerServiceUrlCommand(context);
+
 }
 
 export function deactivate() { }

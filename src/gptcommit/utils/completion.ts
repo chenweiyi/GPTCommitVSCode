@@ -13,7 +13,8 @@ const initMessagesPrompt: Array<ChatCompletionRequestMessage> = [
     },
     {
         role: ChatCompletionRequestMessageRoleEnum.User,
-        content: `diff --git a/src/server.ts b/src/server.ts
+        content: `Here is an example:
+    diff --git a/src/server.ts b/src/server.ts
     index ad4db42..f3b18a9 100644
     --- a/src/server.ts
     +++ b/src/server.ts
@@ -38,7 +39,8 @@ const initMessagesPrompt: Array<ChatCompletionRequestMessage> = [
     },
     {
         role: ChatCompletionRequestMessageRoleEnum.Assistant,
-        content: `fix(server.ts): change port variable case from lowercase port to uppercase PORT
+        content: `You answer is:
+        fix(server.ts): change port variable case from lowercase port to uppercase PORT
         feat(server.ts): add support for process.env.PORT environment variable`
     }
 ];
